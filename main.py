@@ -1,5 +1,6 @@
 """
-Malicious Screen Capture Detection System for Windows
+Unauthorized Screen Capture Detection System for Windows
+Detects malicious/unauthorized screen captures while allowing normal user screenshots
 Main Entry Point
 """
 

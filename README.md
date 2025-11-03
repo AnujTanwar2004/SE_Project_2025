@@ -27,11 +27,11 @@ A sophisticated real-time monitoring system designed to detect and log malicious
 
 ### Core Functionality
 
-- **Real-time Process Monitoring**: Continuously scans running processes for screen capture indicators
+- **Real-time Screenshot Detection**: Monitors clipboard for actual screen capture events (not all processes)
 - **Risk Assessment Engine**: Classifies threats as CRITICAL, HIGH, MEDIUM, or LOW based on behavior patterns
-- **Windows API Detection**: Monitors suspicious API calls commonly used for screen capturing
+- **Authorized vs Unauthorized Detection**: Distinguishes legitimate user screenshots from malicious captures
 - **Whitelist/Blacklist Management**: Pre-configured lists of legitimate and malicious applications
-- **Clipboard Monitoring**: Detects when screen captures are copied to clipboard
+- **Smart Monitoring**: Only flags UNAUTHORIZED screen captures, allows normal user screenshots
 
 ### User Interface
 
@@ -193,51 +193,59 @@ screen_capture_detector/
 
 ### Detection Mechanisms
 
-#### 1. Process Monitoring
+#### 1. Clipboard Screenshot Detection (Primary)
 
-The system continuously scans running processes using `psutil` and checks for:
+The system monitors Windows clipboard for actual screenshot events:
 
-- Suspicious process names (e.g., containing "screenshot", "capture", "screengrab")
-- Known malicious patterns (keylogger, stealer, spyware)
-- Processes not in the whitelist performing screen-related operations
+- Detects when a new image is placed in clipboard (actual screen capture)
+- Identifies which process captured the screen
+- Checks if process is AUTHORIZED (whitelisted) or UNAUTHORIZED (malicious)
+- **Only flags UNAUTHORIZED captures** - user screenshots with PrintScreen, Snipping Tool, etc. work normally
 
-#### 2. Windows API Monitoring
+#### 2. Foreground Process Identification
 
-Monitors calls to common screen capture APIs:
+When a screenshot is detected in clipboard:
 
-- `BitBlt()` - Copies bitmap data
-- `GetDC()` - Gets device context
-- `CreateCompatibleBitmap()` - Creates bitmap objects
-- `PrintWindow()` - Captures window contents
+- Identifies the active foreground window
+- Gets the process that took the screenshot
+- Checks against whitelist of legitimate applications
+- **Whitelisted apps (SnippingTool, ScreenSketch, etc.) = SAFE, no alert**
+- **Unknown/suspicious processes = HIGH RISK, alert shown**
 
 #### 3. Behavioral Analysis
 
-Analyzes process behavior including:
+Analyzes screenshot activity including:
 
-- Command-line arguments containing screen capture keywords
-- Window title analysis
-- Parent-child process relationships
-- Network activity patterns
+- Process name and executable path
+- Window title of capturing application
+- Command-line arguments
+- Known malicious patterns (keylogger, stealer, spyware)
 
 #### 4. Risk Classification
 
-| Risk Level   | Description                           | Examples                                      |
-| ------------ | ------------------------------------- | --------------------------------------------- |
-| **CRITICAL** | Known malware patterns                | Processes with "keylogger", "stealer" in name |
-| **HIGH**     | Suspicious screen capture activity    | Unknown processes with screenshot commands    |
-| **MEDIUM**   | Potentially legitimate but suspicious | Python scripts performing screen capture      |
-| **LOW**      | Minor anomalies                       | Whitelisted apps with unusual behavior        |
+| Risk Level   | Description                           | Examples                                      | Alert? |
+| ------------ | ------------------------------------- | --------------------------------------------- | ------ |
+| **SAFE**     | Authorized user-initiated screenshots | SnippingTool, ScreenSketch, PrintScreen       | ❌ No  |
+| **CRITICAL** | Known malware patterns                | Processes with "keylogger", "stealer" in name | ✅ Yes |
+| **HIGH**     | Unauthorized screen capture activity  | Unknown processes capturing screen            | ✅ Yes |
+| **MEDIUM**   | Suspicious but unconfirmed            | Processes with suspicious names               | ✅ Yes |
+| **LOW**      | Minor anomalies                       | Edge cases requiring investigation            | ✅ Yes |
 
-### Whitelist (Trusted Applications)
+### Whitelist (Authorized/Trusted Applications)
 
-- Windows Snipping Tool (`SnippingTool.exe`)
-- Windows Snip & Sketch (`ScreenSketch.exe`)
+**These applications can take screenshots WITHOUT triggering alerts:**
+
+- Windows Snipping Tool (`SnippingTool.exe`) - **User pressing Win+Shift+S**
+- Windows Snip & Sketch (`ScreenSketch.exe`) - **User pressing PrintScreen**
+- Windows Explorer (`explorer.exe`) - **User pressing PrintScreen**
 - ShareX (`ShareX.exe`)
 - Greenshot (`Greenshot.exe`)
 - Microsoft Paint (`mspaint.exe`)
 - OBS Studio (`obs64.exe`, `obs32.exe`)
 - Discord (`Discord.exe`)
 - Microsoft Teams (`TEAMS.exe`)
+- Chrome, Firefox, Edge browsers
+- Development tools (VS Code, PyCharm, etc.)
 
 ---
 
@@ -408,5 +416,6 @@ For issues, questions, or suggestions:
 ---
 
 **Made with 🛡️ for enhanced Windows security**
-#   S E _ P r o j e c t _ 2 0 2 5  
+#   S E * P r o j e c t * 2 0 2 5 
+ 
  

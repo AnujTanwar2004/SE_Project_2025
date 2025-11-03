@@ -45,7 +45,9 @@ Four cards displaying:
 
 ### 1. 🔴 Real-Time Monitoring
 
-**Purpose**: View live screen capture detection events
+**Purpose**: View UNAUTHORIZED screen capture detection events
+
+**Important**: Normal user screenshots (PrintScreen, Snipping Tool, etc.) are AUTHORIZED and will NOT appear here unless you enable "Log Safe Processes" in settings.
 
 **Columns**:
 
@@ -53,14 +55,15 @@ Four cards displaying:
 - **Process**: Name of the process performing screen capture
 - **PID**: Process ID (useful for advanced users)
 - **Method**: Detection method used
-- **Risk**: CRITICAL, HIGH, MEDIUM, or LOW
+- **Risk**: SAFE, CRITICAL, HIGH, MEDIUM, or LOW
 - **Window**: Title of the window being captured
 
 **Color Coding**:
 
-- 🔴 Red: CRITICAL risk
-- 🟠 Orange: HIGH risk
-- 🟡 Yellow: MEDIUM risk
+- 🔴 Red: CRITICAL risk (UNAUTHORIZED malicious capture)
+- 🟠 Orange: HIGH risk (UNAUTHORIZED unknown capture)
+- 🟡 Yellow: MEDIUM risk (UNAUTHORIZED suspicious capture)
+- 🟢 Green: SAFE (AUTHORIZED user screenshot - only if logging enabled)
 - ⚪ White: LOW risk
 
 **Actions**:

@@ -1,6 +1,8 @@
 """
-Core Screen Capture Detection Engine
-Monitors Windows API calls and process behaviors to detect screen capture activities
+Core Unauthorized Screen Capture Detection Engine
+Monitors clipboard for screenshot events and identifies whether they are:
+- AUTHORIZED: User-initiated (PrintScreen, Snipping Tool, whitelisted apps) - No alert
+- UNAUTHORIZED: Malicious/unknown processes capturing screen - Alert shown
 """
 
 import threading
@@ -45,17 +47,51 @@ class ScreenCaptureEvent:
 
 
 class ScreenCaptureDetector:
-    """Main detector class for monitoring screen capture activities"""
+    """
+    Main detector class for monitoring UNAUTHORIZED screen capture activities
     
-    # Known legitimate screen capture tools
+    How it works:
+    1. Monitors Windows clipboard for screenshot events (actual captures)
+    2. Identifies which process took the screenshot
+    3. Checks if process is in WHITELIST (authorized/legitimate)
+    4. ONLY flags unauthorized/malicious captures
+    5. User screenshots with PrintScreen, Snipping Tool etc. work normally (no alerts)
+    """
+    
+    # Known legitimate/authorized screen capture tools and applications
+    # These are ALLOWED and will NOT be flagged as threats
     WHITELIST = {
-        'SnippingTool.exe', 'ScreenSketch.exe', 'ShareX.exe', 
-        'Greenshot.exe', 'mspaint.exe', 'explorer.exe',
-        'obs64.exe', 'obs32.exe', 'Discord.exe', 'TEAMS.exe',
-        'Code.exe', 'chrome.exe', 'msedge.exe', 'msedgewebview2.exe',
-        'firefox.exe', 'powershell.exe', 'cmd.exe', 'conhost.exe',
-        'WindowsTerminal.exe', 'nvcontainer.exe', 'NVIDIA Web Helper.exe',
-        'WMIRegistrationService.exe', 'python.exe', 'pythonw.exe'
+        # Windows built-in screenshot tools
+        'SnippingTool.exe', 'ScreenSketch.exe', 'explorer.exe', 'mspaint.exe',
+        'dwm.exe', 'csrss.exe', 'winlogon.exe',  # Windows system processes
+        
+        # Professional screen capture/recording tools
+        'ShareX.exe', 'Greenshot.exe', 'obs64.exe', 'obs32.exe', 
+        'OBS Studio.exe', 'Streamlabs OBS.exe', 'Camtasia.exe',
+        
+        # Communication apps with screen share
+        'Discord.exe', 'TEAMS.exe', 'Slack.exe', 'Zoom.exe', 'Skype.exe',
+        'msteams.exe', 'Teams.exe',
+        
+        # Browsers (for web-based screenshots)
+        'chrome.exe', 'msedge.exe', 'msedgewebview2.exe', 'firefox.exe',
+        'brave.exe', 'opera.exe', 'iexplore.exe',
+        
+        # Development tools
+        'Code.exe', 'devenv.exe', 'idea64.exe', 'pycharm64.exe',
+        'VisualStudio.exe', 'sublime_text.exe',
+        
+        # System tools
+        'powershell.exe', 'cmd.exe', 'conhost.exe', 'WindowsTerminal.exe',
+        'python.exe', 'pythonw.exe', 'javaw.exe', 'java.exe',
+        
+        # Graphics/Media tools
+        'NVIDIA Web Helper.exe', 'nvcontainer.exe', 'GeForceExperience.exe',
+        'Photoshop.exe', 'GIMP.exe', 'paint.net.exe',
+        
+        # Common applications
+        'Spotify.exe', 'notepad.exe', 'Calculator.exe', 'SystemSettings.exe',
+        'notepad++.exe', 'vlc.exe', 'iTunes.exe', 'Steam.exe'
     }
     
     # Known malicious patterns
@@ -111,28 +147,37 @@ class ScreenCaptureDetector:
                 self.logger.error(f"Error in callback: {e}")
     
     def _monitor_loop(self):
-        """Main monitoring loop"""
-        self.logger.info("Monitoring loop started")
+        """Main monitoring loop - monitors ACTUAL screen capture activity"""
+        self.logger.info("Monitoring loop started - Tracking clipboard and active processes")
+        
+        # Initialize clipboard tracking
+        self.last_clipboard_sequence = None
+        self.clipboard_check_count = 0
         
         while self.running:
             try:
-                # Monitor for screen capture processes
-                self._check_running_processes()
+                # PRIMARY: Monitor clipboard for NEW screenshots
+                self._detect_clipboard_screenshot()
                 
-                # Monitor for suspicious API usage patterns
-                self._check_api_patterns()
+                # SECONDARY: Monitor for screen capture tool launches (only when actually used)
+                self._check_active_capture_tools()
                 
-                # Monitor clipboard for captured images
-                self._check_clipboard()
-                
-                time.sleep(1)  # Check every second
+                time.sleep(0.5)  # Check twice per second for responsiveness
                 
             except Exception as e:
                 self.logger.error(f"Error in monitoring loop: {e}")
                 time.sleep(2)
     
     def _check_running_processes(self):
-        """Check running processes for screen capture indicators"""
+        """Legacy method - now using clipboard and active tool detection instead"""
+        # This method is deprecated in favor of _detect_clipboard_screenshot
+        # and _check_active_capture_tools which detect ACTUAL capture events
+        pass
+    
+    def _old_process_scanner(self):
+        """OLD BROKEN METHOD - DO NOT USE"""
+        # This was scanning ALL processes which was wrong
+        # Keeping for reference only
         try:
             for proc in psutil.process_iter(['pid', 'name', 'exe', 'cmdline']):
                 try:
@@ -150,6 +195,10 @@ class ScreenCaptureDetector:
                     
                     # Check for screen capture indicators
                     risk_level = self._assess_process_risk(proc_info)
+                    
+                    # Skip processes that are not related to screen capture
+                    if risk_level == "NOT_RELEVANT":
+                        continue
                     
                     # Log all screen capture tools if enabled, or only risky ones
                     should_log = (risk_level != "SAFE") or (risk_level == "SAFE" and self.log_safe_processes)
@@ -190,6 +239,25 @@ class ScreenCaptureDetector:
             cmdline_list = []
         cmdline = ' '.join(cmdline_list).lower() if isinstance(cmdline_list, list) else str(cmdline_list).lower()
         
+        # First, check if this process has ANY screen capture indicators
+        # If no indicators, it's not a screen capture tool at all
+        screen_capture_indicators = [
+            'screenshot', 'screencap', 'capture', 'printscreen', 'print screen',
+            'getdc', 'bitblt', 'screengrab', 'snapshot', 'snip', 'clip',
+            'record', 'obs', 'share', 'streaming', 'broadcast'
+        ]
+        
+        # Check if process name suggests screen capture functionality
+        has_capture_indicator = any(indicator in name_lower for indicator in screen_capture_indicators)
+        has_cmdline_indicator = any(indicator in cmdline for indicator in screen_capture_indicators)
+        has_path_indicator = any(indicator in exe for indicator in screen_capture_indicators)
+        
+        # If no screen capture indicators at all, skip this process (not relevant)
+        if not (has_capture_indicator or has_cmdline_indicator or has_path_indicator):
+            return "NOT_RELEVANT"
+        
+        # Now assess risk for processes that DO have screen capture indicators
+        
         # Check whitelist (case-insensitive exact match)
         if any(name_lower == white.lower() for white in self.WHITELIST):
             return "SAFE"
@@ -199,46 +267,175 @@ class ScreenCaptureDetector:
                for black in self.BLACKLIST):
             return "CRITICAL"
         
-        # Check for suspicious indicators
-        suspicious_indicators = [
-            'screenshot', 'screencap', 'capture', 'printscreen',
-            'getdc', 'bitblt', 'screengrab', 'snapshot'
-        ]
-        
-        if any(indicator in cmdline for indicator in suspicious_indicators):
+        # Unknown process with screen capture activity - HIGH risk
+        if has_cmdline_indicator or has_path_indicator:
             return "HIGH"
         
-        # Check for hidden windows with screen capture capabilities
-        if 'python' in name_lower and ('screenshot' in cmdline or 'capture' in cmdline):
+        # Process name suggests screen capture but not confirmed - MEDIUM risk
+        if has_capture_indicator:
             return "MEDIUM"
         
-        return "SAFE"
+        return "LOW"
     
-    def _check_api_patterns(self):
-        """Monitor for suspicious Windows API usage patterns"""
-        # This would require kernel-mode driver or API hooking
-        # For PoC, we'll simulate detection of common APIs
-        pass
-    
-    def _check_clipboard(self):
-        """Check clipboard for captured screen images"""
+    def _detect_clipboard_screenshot(self):
+        """Detect when a screenshot is taken and placed in clipboard"""
         try:
             import win32clipboard
-            from PIL import ImageGrab
             
-            # Try to detect if clipboard contains a bitmap
             try:
                 win32clipboard.OpenClipboard()
-                if win32clipboard.IsClipboardFormatAvailable(win32con.CF_BITMAP):
-                    # Clipboard has a bitmap, could be a screenshot
-                    # We'd need to track which process put it there
-                    pass
-                win32clipboard.CloseClipboard()
-            except:
-                pass
                 
+                # Get clipboard sequence number (changes when clipboard content changes)
+                try:
+                    sequence_number = win32clipboard.GetClipboardSequenceNumber()
+                except:
+                    sequence_number = None
+                
+                # Check if clipboard has changed
+                if self.last_clipboard_sequence is not None and sequence_number is not None:
+                    if sequence_number != self.last_clipboard_sequence:
+                        # Clipboard changed - check if it's an image
+                        if win32clipboard.IsClipboardFormatAvailable(win32con.CF_DIB) or \
+                           win32clipboard.IsClipboardFormatAvailable(win32con.CF_BITMAP):
+                            # New image detected in clipboard - likely a screenshot!
+                            self._handle_screenshot_detection()
+                
+                self.last_clipboard_sequence = sequence_number
+                win32clipboard.CloseClipboard()
+                
+            except Exception as e:
+                # Clipboard might be in use by another process
+                try:
+                    win32clipboard.CloseClipboard()
+                except:
+                    pass
+                    
         except Exception as e:
-            pass  # Clipboard monitoring is optional
+            self.logger.debug(f"Clipboard check error: {e}")
+    
+    def _handle_screenshot_detection(self):
+        """Handle detected screenshot event - identify which process took it"""
+        try:
+            # Get the foreground window (most likely source of screenshot)
+            hwnd = win32gui.GetForegroundWindow()
+            if hwnd:
+                _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                window_title = win32gui.GetWindowText(hwnd)
+                
+                # Get process information
+                try:
+                    process = psutil.Process(pid)
+                    process_name = process.name()
+                    exe_path = process.exe()
+                    
+                    # Assess risk
+                    proc_info = {
+                        'name': process_name,
+                        'pid': pid,
+                        'exe': exe_path,
+                        'cmdline': process.cmdline()
+                    }
+                    
+                    risk_level = self._assess_screenshot_risk(proc_info)
+                    
+                    # ONLY log if it's NOT SAFE (i.e., suspicious/unauthorized)
+                    # Do NOT flag legitimate user-initiated screenshots
+                    if risk_level != "SAFE":
+                        # This is an UNAUTHORIZED screen capture - log it!
+                        event = ScreenCaptureEvent(
+                            process_name=process_name,
+                            pid=pid,
+                            method="Unauthorized Screen Capture Detected",
+                            risk_level=risk_level
+                        )
+                        event.window_title = window_title
+                        event.executable_path = exe_path
+                        
+                        self._record_detection(event)
+                    else:
+                        # Safe/authorized screenshot - optionally log if enabled
+                        if self.log_safe_processes:
+                            event = ScreenCaptureEvent(
+                                process_name=process_name,
+                                pid=pid,
+                                method="Authorized Screen Capture (User-Initiated)",
+                                risk_level="SAFE"
+                            )
+                            event.window_title = window_title
+                            event.executable_path = exe_path
+                            self._record_detection(event)
+                    
+                except psutil.NoSuchProcess:
+                    pass
+                    
+        except Exception as e:
+            self.logger.error(f"Error handling screenshot detection: {e}")
+    
+    def _assess_screenshot_risk(self, proc_info: Dict) -> str:
+        """Assess risk when a screenshot is detected"""
+        name = proc_info.get('name', '').lower()
+        
+        # Check if it's a whitelisted tool
+        if any(name == white.lower() for white in self.WHITELIST):
+            return "SAFE"
+        
+        # Check blacklist
+        if any(black in name for black in self.BLACKLIST):
+            return "CRITICAL"
+        
+        # Unknown process taking screenshots
+        return "HIGH"
+    
+    def _check_active_capture_tools(self):
+        """Check for screen capture tools that are currently active"""
+        # Only check for processes with visible windows that might be capturing
+        try:
+            def callback(hwnd, results):
+                if win32gui.IsWindowVisible(hwnd):
+                    _, pid = win32process.GetWindowThreadProcessId(hwnd)
+                    title = win32gui.GetWindowText(hwnd)
+                    
+                    # Look for screen capture keywords in window titles
+                    capture_keywords = ['snip', 'screenshot', 'capture', 'screen record']
+                    if title and any(keyword in title.lower() for keyword in capture_keywords):
+                        results.append((pid, title))
+                return True
+            
+            results = []
+            win32gui.EnumWindows(callback, results)
+            
+            # Process any found capture tools
+            for pid, title in results:
+                if pid not in self.monitored_processes:
+                    try:
+                        process = psutil.Process(pid)
+                        proc_info = {
+                            'name': process.name(),
+                            'pid': pid,
+                            'exe': process.exe(),
+                            'cmdline': process.cmdline()
+                        }
+                        
+                        risk_level = self._assess_screenshot_risk(proc_info)
+                        
+                        if risk_level != "SAFE" or self.log_safe_processes:
+                            event = ScreenCaptureEvent(
+                                process_name=proc_info['name'],
+                                pid=pid,
+                                method="Active Screen Capture Tool",
+                                risk_level=risk_level
+                            )
+                            event.window_title = title
+                            event.executable_path = proc_info['exe']
+                            
+                            self._record_detection(event)
+                            self.monitored_processes[pid] = proc_info['name']
+                            
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        pass
+                        
+        except Exception as e:
+            self.logger.debug(f"Error checking active capture tools: {e}")
     
     def _get_window_title_by_pid(self, pid: int) -> str:
         """Get window title for a given process ID"""

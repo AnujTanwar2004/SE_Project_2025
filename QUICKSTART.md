@@ -77,8 +77,9 @@ screen_capture_detector/
 
 ### 🔴 Real-Time Monitoring
 
-- Detect screen capture attempts as they happen
-- Color-coded risk levels (Critical, High, Medium, Low)
+- Detect **UNAUTHORIZED** screen capture attempts (not user screenshots!)
+- Normal PrintScreen, Snipping Tool usage = SAFE (no alerts)
+- Color-coded risk levels (Safe, Critical, High, Medium, Low)
 - Process details with PID and window titles
 
 ### 📊 Statistics Dashboard
