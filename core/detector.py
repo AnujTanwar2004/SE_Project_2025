@@ -83,7 +83,7 @@ class ScreenCaptureDetector:
         
         # System tools
         'powershell.exe', 'cmd.exe', 'conhost.exe', 'WindowsTerminal.exe',
-        'python.exe', 'pythonw.exe', 'javaw.exe', 'java.exe',
+        #'python.exe', 'pythonw.exe', 'javaw.exe', 'java.exe',
         
         # Graphics/Media tools
         'NVIDIA Web Helper.exe', 'nvcontainer.exe', 'GeForceExperience.exe',

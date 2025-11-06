@@ -1,6 +1,6 @@
 # 🌐 Is Chrome.exe Safe for Screen Captures?
 
-## Short Answer: **YES, Chrome is Safe** ✅
+## Short Answer: **YES, Chrome is Safe** 
 
 ---
 
@@ -30,7 +30,7 @@
 
 ## Security Considerations
 
-### ✅ **Chrome is Generally Safe Because:**
+###  **Chrome is Generally Safe Because:**
 
 1. **User Consent Required**
 
@@ -51,7 +51,7 @@
 
 ---
 
-## ⚠️ **When Chrome COULD Be Risky:**
+##  **When Chrome COULD Be Risky:**
 
 ### **Malicious Browser Extensions**
 
@@ -89,7 +89,7 @@
 
 ```python
 WHITELIST = {
-    'chrome.exe',  # ✅ Whitelisted
+    'chrome.exe',  #  Whitelisted
     # ... other browsers
 }
 ```
@@ -115,18 +115,18 @@ Even though Chrome is whitelisted, we still monitor for:
 
 ---
 
-## 🎯 Recommendations
+##  Recommendations
 
 ### **For Regular Users:**
 
-✅ **DO:**
+**DO:**
 
 - Keep Chrome updated
 - Only install trusted extensions
 - Pay attention to screen share permission prompts
 - Regularly review installed extensions in `chrome://extensions`
 
-❌ **DON'T:**
+ **DON'T:**
 
 - Install extensions from unknown sources
 - Grant screen share to untrusted websites
@@ -155,21 +155,21 @@ If you want **stricter monitoring** of Chrome:
 
 ---
 
-## 📊 Chrome Screen Capture Statistics
+##  Chrome Screen Capture Statistics
 
 ### **How Chrome Captures Screen:**
 
 | Method                             | Safety                  | User Notification    |
 | ---------------------------------- | ----------------------- | -------------------- |
-| Built-in Screenshot (Ctrl+Shift+S) | ✅ Safe                 | User-initiated       |
-| Developer Tools Screenshot         | ✅ Safe                 | User-initiated       |
-| Screen Share API (WebRTC)          | ⚠️ Requires Permission  | Browser prompt       |
-| Extension Screenshots              | ⚠️ Depends on Extension | Extension permission |
-| Tab Capture API                    | ⚠️ Requires Permission  | Extension permission |
+| Built-in Screenshot (Ctrl+Shift+S) |  Safe                 | User-initiated       |
+| Developer Tools Screenshot         |  Safe                 | User-initiated       |
+| Screen Share API (WebRTC)          |  Requires Permission  | Browser prompt       |
+| Extension Screenshots              |  Depends on Extension | Extension permission |
+| Tab Capture API                    |  Requires Permission  | Extension permission |
 
 ---
 
-## 🔧 How to Enable Safe Process Logging
+##  How to Enable Safe Process Logging
 
 If you want to see **when Chrome performs screen captures** (even though it's safe):
 
@@ -194,26 +194,26 @@ detector = ScreenCaptureDetector(log_safe_processes=True)
 Now you'll see entries like:
 
 ```
-✅ [INFO] Screen capture detected: chrome.exe (PID: 12345) - Risk: SAFE
+ [INFO] Screen capture detected: chrome.exe (PID: 12345) - Risk: SAFE
 ```
 
 ---
 
-## 🌍 Other Browsers
+##  Other Browsers
 
 All major browsers are similarly safe and whitelisted:
 
 | Browser | Executable                     | Whitelisted           | Notes           |
 | ------- | ------------------------------ | --------------------- | --------------- |
-| Chrome  | chrome.exe                     | ✅ Yes                | Google Chrome   |
-| Edge    | msedge.exe, msedgewebview2.exe | ✅ Yes                | Microsoft Edge  |
-| Firefox | firefox.exe                    | ✅ Yes                | Mozilla Firefox |
-| Brave   | brave.exe                      | ❌ No (add if needed) | Chromium-based  |
-| Opera   | opera.exe                      | ❌ No (add if needed) | Chromium-based  |
+| Chrome  | chrome.exe                     |  Yes                | Google Chrome   |
+| Edge    | msedge.exe, msedgewebview2.exe |  Yes                | Microsoft Edge  |
+| Firefox | firefox.exe                    |  Yes                | Mozilla Firefox |
+| Brave   | brave.exe                      |  No (add if needed) | Chromium-based  |
+| Opera   | opera.exe                      |  No (add if needed) | Chromium-based  |
 
 ---
 
-## 🔒 Best Practices Summary
+##  Best Practices Summary
 
 1. **Trust but Verify**
    - Chrome is safe, but monitor extension permissions
@@ -234,7 +234,7 @@ All major browsers are similarly safe and whitelisted:
 
 ---
 
-## ❓ FAQ
+##  FAQ
 
 **Q: Should I be worried about Chrome screen captures?**  
 A: No, not in normal use. Chrome requires user permission for screen sharing.
@@ -253,7 +253,7 @@ A: No! Chrome always shows a permission prompt. If you don't see one, don't trus
 
 ---
 
-## 🎓 Technical Details
+##  Technical Details
 
 ### Chrome Screen Capture APIs:
 
@@ -265,7 +265,7 @@ All of these require explicit user permission and show browser prompts.
 
 ---
 
-## 🚀 Try It Yourself
+##  Try It Yourself
 
 Run the demo with safe logging:
 
@@ -276,11 +276,11 @@ python demo_with_safe.py
 Then open Chrome and use screen share on Google Meet or take a screenshot with an extension. You'll see:
 
 ```
-✅ DETECTION!
+ DETECTION!
    Process: chrome.exe
    PID: 12345
    Risk Level: SAFE
-   ℹ️  This is a whitelisted/legitimate tool
+    This is a whitelisted/legitimate tool
 ```
 
 ---
@@ -290,4 +290,4 @@ Then open Chrome and use screen share on Google Meet or take a screenshot with a
 ---
 
 **Last Updated:** 10 October 2025  
-**Status:** ✅ Chrome is SAFE and WHITELISTED
+**Status:**  Chrome is SAFE and WHITELISTED

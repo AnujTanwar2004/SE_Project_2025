@@ -230,11 +230,11 @@ For issues or questions:
 
 ---
 
-## 🏁 Ready to Start?
+##  Ready to Start?
 
-1. ✅ Dependencies installed? → Run `install.bat`
-2. ✅ Tested the system? → Run `test_system.py`
-3. ✅ Ready to monitor? → Run `run.bat` or `python main.py`
-4. ✅ Click **"▶ Start Monitoring"** and you're protected! 🎉
+1.  Dependencies installed? → Run `install.bat`
+2.  Tested the system? → Run `test_system.py`
+3.  Ready to monitor? → Run `run.bat` or `python main.py`
+4.  Click **"▶ Start Monitoring"** and you're protected! 🎉
 
-**Stay secure!** 🛡️
+**Stay secure!** 
